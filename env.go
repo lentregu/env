@@ -16,6 +16,9 @@ var (
 	ErrNotAStructPtr = errors.New("Expected a pointer to a Struct")
 	// ErrUnsupportedType if the struct field type is not supported by env
 	ErrUnsupportedType = errors.New("Type is not supported")
+	// ErrMismatchType if the env value can't be assigned. For instance when try to assign an env value
+	// to a struct (The env values MUST be assigned to the struct fields).
+	ErrMismatchType = errors.New("Data Type mismatch. Mismatching left and right hand types")
 	// ErrUnsupportedSliceType if the slice element type is not supported by env
 	ErrUnsupportedSliceType = errors.New("Unsupported slice type")
 	// Friendly names for reflect types
@@ -73,7 +76,25 @@ func doParse(ref reflect.Value, funcMap CustomParsers) error {
 			}
 			continue
 		}
+
+		// skip unexported fields
+		if !ref.Field(i).CanSet() && ref.Field(i).Kind() != reflect.Struct {
+			continue
+		}
+
 		value, err := get(refType.Field(i))
+		// if the field is a struct then doParse(field)
+		if ref.Field(i).Kind() == reflect.Struct && value == "" {
+			doParse(ref.Field(i), funcMap)
+			continue
+		}
+
+		// if the field is a pointer to a struct, then doParse(field.Elem())
+		if ref.Field(i).Kind() == reflect.Ptr && ref.Field(i).Elem().Kind() == reflect.Struct && value == "" {
+			doParse(ref.Field(i).Elem(), funcMap)
+			continue
+		}
+
 		if err != nil {
 			errorList = append(errorList, err.Error())
 			continue
@@ -194,7 +215,8 @@ func set(field reflect.Value, refType reflect.StructField, value string, funcMap
 			field.SetInt(intValue)
 		}
 	case reflect.Struct:
-		return handleStruct(field, refType, value, funcMap)
+		//return handleStruct(field, refType, value, funcMap)
+		return ErrMismatchType
 	default:
 		return ErrUnsupportedType
 	}
