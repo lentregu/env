@@ -283,7 +283,7 @@ func TestPointerToStruct(t *testing.T) {
 	os.Setenv("VAR1", "test1")
 	os.Setenv("VAR2", "test2")
 
-	cfg := &config{&foo{}}
+	cfg := &config{F: &foo{}}
 	err := Parse(cfg)
 
 	assert.NoError(t, err)
@@ -291,7 +291,7 @@ func TestPointerToStruct(t *testing.T) {
 	assert.Equal(t, "test2", cfg.F.Name2)
 }
 
-func TestNullPointerToStruct(t *testing.T) {
+func TestNilPointerToStruct(t *testing.T) {
 	type foo struct {
 		Name1 string `env:"VAR1"`
 		Name2 string `env:"VAR2"`
@@ -310,45 +310,6 @@ func TestNullPointerToStruct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, cfg.F)
 }
-
-func TestParseWithFuncsNoPtr(t *testing.T) {
-	type foo struct{}
-	err := ParseWithFuncs(foo{}, nil)
-	assert.Error(t, err)
-	assert.Equal(t, err, ErrNotAStructPtr)
-}
-
-func TestParseWithFuncsInvalidType(t *testing.T) {
-	var c int
-	err := ParseWithFuncs(&c, nil)
-	assert.Error(t, err)
-	assert.Equal(t, err, ErrNotAStructPtr)
-}
-
-// func TestCustomParserError(t *testing.T) {
-// 	type foo struct {
-// 		Name string `env:"VAR"`
-// 	}
-
-// 	type config struct {
-// 		foo
-// 	}
-
-// 	os.Setenv("VAR", "test")
-
-// 	customParserFunc := func(v string) (interface{}, error) {
-// 		return nil, errors.New("something broke")
-// 	}
-
-// 	cfg := &config{}
-// 	err := ParseWithFuncs(cfg, map[reflect.Type]ParserFunc{
-// 		reflect.TypeOf(foo{}): customParserFunc,
-// 	})
-
-// 	assert.Empty(t, cfg.Name, "Var.name should not be filled out when parse errors")
-// 	assert.Error(t, err)
-// 	assert.Equal(t, err.Error(), "Custom parser error: something broke")
-// }
 
 func TestMisnatchType(t *testing.T) {
 	type config struct {

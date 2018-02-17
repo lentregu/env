@@ -36,7 +36,14 @@ type config struct {
 	IsProduction bool          `env:"PRODUCTION"`
 	Hosts        []string      `env:"HOSTS" envSeparator:":"`
 	Duration     time.Duration `env:"DURATION"`
+	foo
 }
+
+type foo struct {
+	Name1 string `env:"EXAMPLE_FOO1"`
+	Name2 string `env:"EXAMPLE_FOO2"`
+}
+
 
 func main() {
 	cfg := config{}
@@ -51,8 +58,8 @@ func main() {
 You can run it like this:
 
 ```sh
-$ PRODUCTION=true HOSTS="host1:host2:host3" DURATION=1s go run examples/first.go
-{Home:/your/home Port:3000 IsProduction:true Hosts:[host1 host2 host3] Duration:1s}
+$ EXAMPLE_FOO1=foo1 EXAMPLE_FOO2=foo2 PRODUCTION=true HOSTS="host1:host2:host3" DURATION=1s go run embeddedStruct.go
+{Home:/your/home Port:3000 IsProduction:true Hosts:[host1 host2 host3] Duration:1s Foo:{Name1:foo1 Name2:foo2}}}
 ```
 
 ## Supported types and defaults
@@ -72,6 +79,8 @@ The library has built-in support for the following types:
 * `[]float32`
 * `[]float64`
 * `time.Duration`
+* `struct`
+* `*struct`
 * .. or use/define a [custom parser func](#custom-parser-funcs) for any other type
 
 If you set the `envDefault` tag for something, this value will be used in the
@@ -81,20 +90,6 @@ of the type will be used: empty for `string`s, `false` for `bool`s
 and `0` for `int`s.
 
 By default, slice types will split the environment value on `,`; you can change this behavior by setting the `envSeparator` tag.
-
-## Custom Parser Funcs
-
-If you have a type that is not supported out of the box by the lib, you are able
-to use (or define) and pass custom parsers (and their associated `reflect.Type`) to the
-`env.ParseWithFuncs()` function.
-
-In addition to accepting a struct pointer (same as `Parse()`), this function also
-accepts a `env.CustomParsers` arg that under the covers is a `map[reflect.Type]env.ParserFunc`.
-
-To see what this looks like in practice, take a look at the [commented block in the example](https://github.com/caarlos0/env/blob/master/examples/first.go#L35-L39).
-
-`env` also ships with some pre-built custom parser funcs for common types. You
-can check them out [here](parsers/).
 
 ## Required fields
 

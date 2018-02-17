@@ -47,24 +47,26 @@ func Parse(v interface{}) error {
 	if ref.Kind() != reflect.Struct {
 		return ErrNotAStructPtr
 	}
-	return doParse(ref, make(map[reflect.Type]ParserFunc, 0))
+	//return doParse(ref, make(map[reflect.Type]ParserFunc, 0))
+	return doParse(ref)
+
 }
 
 // ParseWithFuncs is the same as `Parse` except it also allows the user to pass
 // in custom parsers.
-func ParseWithFuncs(v interface{}, funcMap CustomParsers) error {
-	ptrRef := reflect.ValueOf(v)
-	if ptrRef.Kind() != reflect.Ptr {
-		return ErrNotAStructPtr
-	}
-	ref := ptrRef.Elem()
-	if ref.Kind() != reflect.Struct {
-		return ErrNotAStructPtr
-	}
-	return doParse(ref, funcMap)
-}
+// func ParseWithFuncs(v interface{}, funcMap CustomParsers) error {
+// 	ptrRef := reflect.ValueOf(v)
+// 	if ptrRef.Kind() != reflect.Ptr {
+// 		return ErrNotAStructPtr
+// 	}
+// 	ref := ptrRef.Elem()
+// 	if ref.Kind() != reflect.Struct {
+// 		return ErrNotAStructPtr
+// 	}
+// 	return doParse(ref, funcMap)
+// }
 
-func doParse(ref reflect.Value, funcMap CustomParsers) error {
+func doParse(ref reflect.Value) error {
 	refType := ref.Type()
 	var errorList []string
 
@@ -85,13 +87,13 @@ func doParse(ref reflect.Value, funcMap CustomParsers) error {
 		value, err := get(refType.Field(i))
 		// if the field is a struct then doParse(field)
 		if ref.Field(i).Kind() == reflect.Struct && value == "" {
-			doParse(ref.Field(i), funcMap)
+			doParse(ref.Field(i))
 			continue
 		}
 
 		// if the field is a pointer to a struct, then doParse(field.Elem())
 		if ref.Field(i).Kind() == reflect.Ptr && ref.Field(i).Elem().Kind() == reflect.Struct && value == "" {
-			doParse(ref.Field(i).Elem(), funcMap)
+			doParse(ref.Field(i).Elem())
 			continue
 		}
 
@@ -102,7 +104,7 @@ func doParse(ref reflect.Value, funcMap CustomParsers) error {
 		if value == "" {
 			continue
 		}
-		if err := set(ref.Field(i), refType.Field(i), value, funcMap); err != nil {
+		if err := set(ref.Field(i), refType.Field(i), value); err != nil {
 			errorList = append(errorList, err.Error())
 			continue
 		}
@@ -163,7 +165,7 @@ func getOr(key, defaultValue string) string {
 	return defaultValue
 }
 
-func set(field reflect.Value, refType reflect.StructField, value string, funcMap CustomParsers) error {
+func set(field reflect.Value, refType reflect.StructField, value string) error {
 	switch field.Kind() {
 	case reflect.Slice:
 		separator := refType.Tag.Get("envSeparator")
@@ -215,7 +217,6 @@ func set(field reflect.Value, refType reflect.StructField, value string, funcMap
 			field.SetInt(intValue)
 		}
 	case reflect.Struct:
-		//return handleStruct(field, refType, value, funcMap)
 		return ErrMismatchType
 	default:
 		return ErrUnsupportedType

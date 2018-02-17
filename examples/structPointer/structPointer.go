@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/lentregu/env"
@@ -15,7 +14,7 @@ type config struct {
 	IsProduction bool          `env:"PRODUCTION"`
 	Hosts        []string      `env:"HOSTS" envSeparator:":"`
 	Duration     time.Duration `env:"DURATION"`
-	ExampleFoo   Foo
+	ExampleFoo   *Foo
 }
 
 // Foo is a struct refered in config
@@ -24,18 +23,13 @@ type Foo struct {
 }
 
 func main() {
-	cfg := config{}
+	cfg := &config{ExampleFoo: &Foo{Name: "a"}}
 
 	// Parse for built-in types
-	if err := env.Parse(&cfg); err != nil {
+	if err := env.Parse(cfg); err != nil {
 		log.Fatal("Unable to parse envs: ", err)
 	}
 
 	fmt.Printf("%+v\n", cfg)
-}
-
-func fooParser(value string) (interface{}, error) {
-	return Foo{
-		Name: strings.ToUpper(value),
-	}, nil
+	fmt.Printf("ExampleFoo: %+v\n", *cfg.ExampleFoo)
 }
